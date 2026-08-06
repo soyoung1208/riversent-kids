@@ -1,0 +1,38 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "photos"
+public_folder: "photos"
+
+locale: "ko"
+
+collections:
+  - name: "photos"
+    label: "사진 바꾸기"
+    description: "바꾸고 싶은 묶음을 눌러 사진을 교체하고, 오른쪽 위 '게시'를 누르세요. 1~2분 뒤 홈페이지에 반영됩니다."
+    editor:
+      preview: false
+    files:
+      - name: "menu"
+        label: "🍚 이달의 식단표"
+        file: "admin/data/photos.json"
+        fields:
+          - { name: "menu", label: "식단표", widget: "image" }
+          - { name: "main1", label: "슬라이드 1", widget: "image" }
+          - { name: "main2", label: "슬라이드 2", widget: "image" }
+          - { name: "main3", label: "슬라이드 3", widget: "image" }
+          - { name: "main4", label: "슬라이드 4", widget: "image" }
+          - { name: "intro1", label: "소개-보육실", widget: "image" }
+          - { name: "intro2", label: "소개-바깥놀이", widget: "image" }
+          - { name: "intro3", label: "소개-급식", widget: "image" }
+          - { name: "gallery1", label: "갤러리 1", widget: "image" }
+          - { name: "gallery2", label: "갤러리 2", widget: "image" }
+          - { name: "gallery3", label: "갤러리 3", widget: "image" }
+          - { name: "gallery4", label: "갤러리 4", widget: "image" }
+          - { name: "gallery5", label: "갤러리 5", widget: "image" }
+          - { name: "gallery6", label: "갤러리 6", widget: "image" }
+          - { name: "gallery7", label: "갤러리 7", widget: "image" }
+          - { name: "gallery8", label: "갤러리 8", widget: "image" }
+          - { name: "gallery9", label: "갤러리 9", widget: "image" }
+          - { name: "gallery10", label: "갤러리 10", widget: "image" }

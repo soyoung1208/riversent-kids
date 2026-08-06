@@ -889,7 +889,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 /* 파일 내용을 새로 고칠 때마다 이 번호를 바꿉니다.
    번호가 다르면 브라우저에 임시 저장된 옛 글은 버리고 파일의 최신 내용을 씁니다.
    (사진과 식단, 영상 주소는 그대로 유지돼요) */
-var CONTENT_VERSION = '2026-08-01i';
+var CONTENT_VERSION = '2026-08-06a';
 var state = { images:{}, texts:{}, menuText:"", fits:{}, version: CONTENT_VERSION };
 try { var s = JSON.parse(document.getElementById('saved-data').textContent); if (s) state = Object.assign(state, s); } catch(e){}
 state.images = state.images || {}; state.texts = state.texts || {}; state.fits = state.fits || {};
@@ -1352,6 +1352,25 @@ async function exportHtml(){
   audio.addEventListener('play', paint);
   audio.addEventListener('pause', paint);
   paint();
+})();
+
+/* ══ 관리자 페이지에서 바꾼 사진 반영 ══ */
+/* admin/data/photos.json 에 새 사진 경로가 있으면 그 사진으로 교체 */
+(function loadAdminPhotos(){
+  fetch('admin/data/photos.json?t=' + Date.now())
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if (!data) return;
+      Object.keys(data).forEach(function(key){
+        var path = data[key];
+        if (!path) return;
+        document.querySelectorAll('img[data-key="' + key + '"]').forEach(function(img){
+          /* 편집모드로 넣은 사진(state.images)이 없을 때만 관리자 사진 적용 */
+          if (!state.images[key]) img.src = path + '?t=' + Date.now();
+        });
+      });
+    })
+    .catch(function(){ /* 파일 없으면 원래 사진 그대로 */ });
 })();
 
 checkAdmin();
