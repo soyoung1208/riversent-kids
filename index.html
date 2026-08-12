@@ -14,11 +14,14 @@
     (예: index.html#admin)
     편집모드에서 할 수 있는 것
       · 사진 클릭 → 내 컴퓨터 사진으로 교체 (로고 포함)
-      · 점선 상자로 표시된 글(인사말·소개·하루일과) 클릭 → 바로 수정
       · 오늘의 식단 → 한 달치를 한 번 넣어두면 매일 자동으로 바뀜
       · 배너 사진이 어색하면 편집모드 사진 아래 "사진 맞춤"으로 조절
       · 👀 미리보기 → 학부모님께 보이는 실제 모습 확인 (ESC로 편집 복귀)
-      · ↩️ 글 되돌리기 → 글 모양이 깨졌을 때 원래대로 (사진은 그대로 유지)
+
+  ✍️ 글 수정
+    홈페이지 주소 뒤에 /admin 을 붙여 관리자 페이지를 열고
+    '글 바꾸기' 메뉴에서 수정한 뒤 '게시'를 누르면 1~2분 뒤 반영됩니다.
+    (인사말, 이달의 행사, 안내와 협조, 하루일과, FAQ 등)
 
   🎵 배경음악 (선택)
     index.html 옆에 music 폴더를 만들고 bgm.mp3 를 넣으면
@@ -824,8 +827,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 
 <button class="edit-fab" id="editFab" onclick="toggleEdit()">✏️ 편집모드</button>
 <div class="edit-bar">
-  <span>📷 사진 클릭해 교체 · ✍️ 초록 점선 글 수정 (줄 전체를 지우면 모양이 깨질 수 있어요)</span>
-  <button class="b-undo" onclick="resetTexts()">↩️ 글 되돌리기</button>
+  <span>📷 사진을 클릭해 교체하세요 · ✍️ 글 수정은 관리자 페이지(/admin)의 '글 바꾸기'에서</span>
   <button class="b-preview" onclick="togglePreview()">👀 미리보기</button>
   <button class="b-save" onclick="exportHtml()">💾 완성 파일 저장</button>
   <button class="b-reset" onclick="resetAll()">모두 되돌리기</button>
@@ -1042,18 +1044,10 @@ var filePick = document.getElementById('filePick');
 var targetKey = null;
 
 function setTextEditing(on){
-  if (on) document.querySelectorAll('.faq-item').forEach(function(d){ d.open = true; });
-  document.querySelectorAll('[data-text]').forEach(function(el){
-    if (on) { el.setAttribute('contenteditable', 'true'); }
-    else {
-      el.removeAttribute('contenteditable');
-      var k = el.dataset.text;
-      /* 실제로 고친 글만 저장하고, 원래대로면 저장 목록에서 지웁니다 */
-      if (el.innerHTML !== originalTexts[k]) state.texts[k] = el.innerHTML;
-      else delete state.texts[k];
-    }
-  });
+  /* 글은 관리자 페이지(/admin)의 '글 바꾸기'에서만 수정합니다.
+     편집모드에서는 사진만 교체할 수 있어요. */
 }
+
 function toggleEdit(){
   var on = document.body.classList.toggle('editing');
   document.body.classList.remove('preview');
@@ -1286,25 +1280,119 @@ async function exportHtml(){
     .catch(function(){ /* 파일 없으면 원래 사진 그대로 */ });
 })();
 
-/* ══ 관리자 페이지에서 바꿔 저장한 글 반영 ══ */
-/* admin/data/texts.json 에 새 글이 있으면 그 글로 교체합니다 */
+/* ══ 관리자 페이지(/admin)에서 저장한 글 반영 ══ */
+/* admin/data/texts.json 의 내용으로 홈페이지 글을 다시 그립니다 */
 (function loadAdminTexts(){
+  function esc(t){
+    return String(t == null ? '' : t)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  /* **굵게** 표시 지원 */
+  function rich(t){
+    return esc(t).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  }
+  function br(t){ return rich(t).replace(/\n/g, '<br>'); }
+  function paras(t){
+    return String(t || '').split(/\n\s*\n/)
+      .filter(function(x){ return x.trim(); })
+      .map(function(x){ return '<p>' + br(x.trim()) + '</p>'; }).join('');
+  }
+  function put(key, html){
+    var els = document.querySelectorAll('[data-text="' + key + '"]');
+    if (!els.length) return;
+    els.forEach(function(el){ el.innerHTML = html; });
+    originalTexts[key] = html;
+  }
+  function has(d, k){ return d[k] !== undefined && d[k] !== null; }
+  function arr(v){ return Array.isArray(v) ? v : []; }
+
   fetch('admin/data/texts.json?t=' + Date.now())
     .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(data){
-      if (!data) return;
-      Object.keys(data).forEach(function(key){
-        var val = data[key];
-        if (val === undefined || val === null || String(val).trim() === '') return;
-        if (key === 'menu') { state.menuText = val; renderToday(); return; }
-        if (state.texts[key]) return;
-        document.querySelectorAll('[data-text="' + key + '"]').forEach(function(el){
-          el.innerHTML = val;
-          originalTexts[key] = val;
-        });
+    .then(function(d){
+      if (!d) return;
+
+      /* 메인 문구 */
+      if (has(d,'hero_title')) {
+        put('hero',
+          '<p class="name">' + esc(d.hero_name) + '</p>'
+          + '<h1>' + br(d.hero_title) + '</h1>'
+          + '<p class="hero-sub">' + rich(d.hero_sub) + '</p>');
+      }
+
+      /* 원장 인사말 */
+      if (has(d,'greet_body')) {
+        put('greet',
+          '<h3>' + rich(d.greet_title) + '</h3>'
+          + paras(d.greet_body)
+          + '<p class="greet-sign">' + rich(d.greet_sign) + '</p>');
+      }
+
+      /* 어린이집 소개 카드 3개 */
+      [1,2,3].forEach(function(n){
+        if (!has(d,'intro'+n+'_t')) return;
+        put('intro'+n, '<h3>' + rich(d['intro'+n+'_t']) + '</h3>'
+                     + '<p>' + rich(d['intro'+n+'_d']) + '</p>');
+      });
+
+      /* 우리 어린이집만의 특별함 6개 */
+      [1,2,3,4,5,6].forEach(function(n){
+        if (!has(d,'sp'+n+'_t')) return;
+        put('sp'+n, '<div class="emoji" aria-hidden="true">' + esc(d['sp'+n+'_e']) + '</div>'
+                  + '<h3>' + rich(d['sp'+n+'_t']) + '</h3>'
+                  + '<p>' + rich(d['sp'+n+'_d']) + '</p>');
+      });
+
+      /* 생태전환교육 */
+      if (has(d,'eco_lead')) put('eco-lead', br(d.eco_lead));
+      [1,2,3].forEach(function(n){
+        if (!has(d,'eco'+n+'_t')) return;
+        put('eco'+n+'txt', '<h3>' + rich(d['eco'+n+'_t']) + '</h3>'
+                         + '<p>' + rich(d['eco'+n+'_d']) + '</p>');
+      });
+
+      /* 하루일과 */
+      if (arr(d.day).length) {
+        put('day', arr(d.day).map(function(s){
+          return '<div class="slot"><time>' + esc(s.time) + '</time>'
+               + '<h3>' + rich(s.title) + '</h3>'
+               + (s.note ? '<p>' + rich(s.note) + '</p>' : '')
+               + '</div>';
+        }).join(''));
+      }
+      if (has(d,'day_note')) put('day-note', br(d.day_note));
+
+      /* 이달의 행사 일정 */
+      if (has(d,'events_title') || arr(d.events).length) {
+        put('events',
+          '<h3>' + rich(d.events_title) + '</h3>'
+          + '<p class="ev-intro">' + br(d.events_intro) + '</p>'
+          + '<div class="ev-list">' + arr(d.events).map(function(e){
+              return '<div class="ev"><span class="ev-d">' + esc(e.date)
+                   + (e.day ? '<br>' + esc(e.day) : '') + '</span><div>'
+                   + '<span class="ev-t">' + rich(e.title) + '</span>'
+                   + (e.target ? '<span class="ev-c">' + rich(e.target) + '</span>' : '')
+                   + (e.note ? '<span class="ev-p">' + rich(e.note) + '</span>' : '')
+                   + '</div></div>';
+            }).join('') + '</div>');
+      }
+
+      /* 안내와 협조 */
+      if (has(d,'notices_title') || arr(d.notices).length) {
+        put('notices',
+          '<h3>' + rich(d.notices_title) + '</h3><ul>'
+          + arr(d.notices).map(function(n){
+              return '<li>' + (n.tag ? '<span class="n-date">' + esc(n.tag) + '</span>' : '')
+                   + rich(n.text) + '</li>';
+            }).join('') + '</ul>');
+      }
+
+      /* 자주 묻는 질문 */
+      [1,2,3,4].forEach(function(n){
+        if (has(d,'faq'+n+'_q')) put('faqq'+n, rich(d['faq'+n+'_q']));
+        if (has(d,'faq'+n+'_a')) put('faqa'+n, br(d['faq'+n+'_a']));
       });
     })
-    .catch(function(){});
+    .catch(function(){ /* 파일이 없으면 원래 글 그대로 */ });
 })();
 
 checkAdmin();
