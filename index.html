@@ -357,7 +357,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   body.preview [data-text]{outline:none;cursor:auto;background:none;}
   body.preview .edit-bar,body.preview .fit-bar,  body.preview .menu-edit,body.preview .edit-fab{display:none;}
   body.preview .consult{display:flex;bottom:18px;}
-  body.preview .mascot{bottom:12px;}
   .preview-exit{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:95;background:var(--ink);color:#fff;border:none;border-radius:999px;padding:13px 24px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 8px 24px rgba(30,40,30,.35);}
   body.preview .preview-exit{display:block;}
   body.editing [data-text]:focus-within,body.editing [data-text]:focus{outline-color:var(--green);background:rgba(255,255,255,.5);}
@@ -380,20 +379,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   @keyframes pulse{0%{box-shadow:0 8px 24px rgba(60,90,55,.3),0 0 0 0 rgba(95,141,78,.45);}70%{box-shadow:0 8px 24px rgba(60,90,55,.3),0 0 0 14px rgba(95,141,78,0);}100%{box-shadow:0 8px 24px rgba(60,90,55,.3),0 0 0 0 rgba(95,141,78,0);}}
   body.admin .consult{bottom:84px;}
   body.editing .consult{display:none;}
-
-  /* ── 돌아다니는 마스코트 ── */
-  .mascot{position:fixed;left:14px;bottom:12px;z-index:70;width:96px;transition:left 5s ease-in-out;}
-  body.editing .mascot{bottom:70px;}
-  .mascot .m-inner{animation:bob 3s ease-in-out infinite;transition:transform .5s;}
-  .mascot img{width:96px;height:96px;object-fit:contain;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(40,50,40,.25));}
-  @keyframes bob{50%{transform:translateY(-8px);}}
-  .mascot img.jump{animation:jump .55s ease;}
-  @keyframes jump{30%{transform:translateY(-26px) scale(1.08) rotate(-6deg);}60%{transform:translateY(0) scale(.96);}}
-  .mascot-bubble{position:absolute;bottom:104px;left:50%;transform:translateX(-50%) scale(.8);background:#fff;color:var(--ink);font-size:13.5px;font-weight:700;padding:9px 14px;border-radius:16px;box-shadow:0 6px 18px rgba(40,50,40,.18);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;}
-  .mascot-bubble::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#fff;}
-  .mascot-bubble.show{opacity:1;transform:translateX(-50%) scale(1);}
-  .mascot-close{position:absolute;top:-8px;right:-4px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(60,70,60,.55);color:#fff;font-size:13px;line-height:1;cursor:pointer;z-index:2;}
-  .confetti{position:absolute;left:50%;top:40%;width:9px;height:9px;border-radius:50%;pointer-events:none;transition:transform .75s ease-out,opacity .75s;}
 
   /* ── 반응형 ── */
   @media (max-width:880px){
@@ -421,9 +406,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     .apply-steps{grid-template-columns:1fr;}
     .visit-grid{grid-template-columns:1fr;}
     section{padding:60px 0;}
-    .mascot{width:72px;}
-    .mascot img{width:72px;height:72px;}
-    .mascot-bubble{bottom:80px;}
     .consult b{font-size:13.5px;}
     .deco{font-size:26px;}
   }
@@ -435,7 +417,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     *{transition:none!important;}
     html{scroll-behavior:auto;}
     .fx{opacity:1;transform:none;}
-    .deco,.mascot .m-inner,.consult{animation:none;}
+    .deco,.consult{animation:none;}
   }
 </style>
 </head>
@@ -828,15 +810,6 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 </footer>
 
 <!-- ══ 편집모드 UI ══ -->
-<!-- 돌아다니는 마스코트 (편집모드에서 사진 클릭 → 뚜비 이미지로 교체) -->
-<div class="mascot" id="mascot">
-  <button class="mascot-close" aria-label="캐릭터 숨기기" onclick="document.getElementById('mascot').style.display='none'">×</button>
-  <div class="mascot-bubble" id="mascotBubble">안녕! 👋</div>
-  <div class="m-inner" id="mascotInner">
-    <img src="photos/mascot.png" alt="어린이집 마스코트" data-key="mascot">
-  </div>
-</div>
-
 <!-- 입학상담 떠 있는 배너 -->
 <a class="consult" href="tel:0537662004" aria-label="입학상담 문의 전화 걸기">
   <span class="c-ico" aria-hidden="true">📞</span>
@@ -1127,7 +1100,7 @@ filePick.addEventListener('change', function(){
   reader.onload = function(){
     var im = new Image();
     im.onload = function(){
-      var isLogo = (targetKey === 'logo' || targetKey === 'mascot');
+      var isLogo = (targetKey === 'logo');
       var max = isLogo ? 500 : 1200;
       var scale = Math.min(1, max / Math.max(im.width, im.height));
       var c = document.createElement('canvas');
@@ -1244,66 +1217,6 @@ async function exportHtml(){
 })();
 
 
-/* ══ 10. 돌아다니는 마스코트 ══ */
-(function(){
-  var mascot = document.getElementById('mascot');
-  var inner = document.getElementById('mascotInner');
-  var bubble = document.getElementById('mascotBubble');
-  var img = mascot.querySelector('img');
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* 뚜비 이미지가 아직 없으면 기본 병아리 캐릭터 표시 */
-  var chick = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">'
-    + '<ellipse cx="60" cy="113" rx="28" ry="5" fill="rgba(0,0,0,.1)"/>'
-    + '<path d="M60 20 Q57 7 47 5 Q60 3 62 15 Q67 5 76 8 Q65 10 62 20 Z" fill="#69A84F"/>'
-    + '<circle cx="60" cy="64" r="42" fill="#FFD95A" stroke="#F2B93B" stroke-width="3"/>'
-    + '<circle cx="46" cy="56" r="5" fill="#33423B"/><circle cx="74" cy="56" r="5" fill="#33423B"/>'
-    + '<circle cx="48" cy="54" r="1.8" fill="#fff"/><circle cx="76" cy="54" r="1.8" fill="#fff"/>'
-    + '<polygon points="60,64 52,74 68,74" fill="#EFA03C"/>'
-    + '<circle cx="36" cy="70" r="6" fill="#F8B5A0" opacity=".75"/><circle cx="84" cy="70" r="6" fill="#F8B5A0" opacity=".75"/>'
-    + '</svg>';
-  var chickSrc = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(chick);
-  img.addEventListener('error', function(){ img.src = chickSrc; });
-  if (state.images.mascot) img.src = state.images.mascot;
-
-  /* 화면 아래를 천천히 돌아다니기 */
-  function wander(){
-    if (reduce || document.body.classList.contains('editing')) return;
-    var maxX = Math.max(14, window.innerWidth - mascot.offsetWidth - 20);
-    var x = 14 + Math.random() * (maxX - 14);
-    var cur = mascot.getBoundingClientRect().left;
-    inner.style.transform = 'scaleX(' + (x > cur ? 1 : -1) + ')';
-    mascot.style.left = Math.round(x) + 'px';
-  }
-  if (!reduce) setInterval(wander, 8000);
-
-  /* 클릭하면 폴짝! + 말풍선 + 색종이 */
-  var lines = ['안녕! 만나서 반가워 👋','오늘도 신나게 놀자!','리버센트에 놀러 와~','우리 같이 지구를 아껴요 🌱','밥 잘 먹고 쑥쑥 크자!','입학 상담은 아래 초록 버튼! 📞'];
-  var colors = ['#EFA03C','#5F8D4E','#2F6E8E','#F2B93B','#F8B5A0','#A4C97A'];
-  img.addEventListener('click', function(){
-    if (document.body.classList.contains('editing')) return;
-    img.classList.remove('jump'); void img.offsetWidth; img.classList.add('jump');
-    bubble.textContent = lines[Math.floor(Math.random() * lines.length)];
-    bubble.classList.add('show');
-    clearTimeout(bubble._t);
-    bubble._t = setTimeout(function(){ bubble.classList.remove('show'); }, 2600);
-    for (var i = 0; i < 12; i++) {
-      var p = document.createElement('span');
-      p.className = 'confetti';
-      p.style.background = colors[i % colors.length];
-      mascot.appendChild(p);
-      (function(p){
-        requestAnimationFrame(function(){
-          var ang = Math.random() * Math.PI * 2, dist = 40 + Math.random() * 50;
-          p.style.transform = 'translate(' + Math.cos(ang)*dist + 'px,' + (Math.sin(ang)*dist - 30) + 'px) scale(.4)';
-          p.style.opacity = '0';
-        });
-        setTimeout(function(){ p.remove(); }, 800);
-      })(p);
-    }
-  });
-})();
-
 /* ══ 11. 스크롤 위치에 맞춰 상단 메뉴에 동그라미 표시 ══ */
 (function(){
   var links = document.querySelectorAll('#gnb a');
@@ -1371,6 +1284,27 @@ async function exportHtml(){
       });
     })
     .catch(function(){ /* 파일 없으면 원래 사진 그대로 */ });
+})();
+
+/* ══ 관리자 페이지에서 바꿔 저장한 글 반영 ══ */
+/* admin/data/texts.json 에 새 글이 있으면 그 글로 교체합니다 */
+(function loadAdminTexts(){
+  fetch('admin/data/texts.json?t=' + Date.now())
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if (!data) return;
+      Object.keys(data).forEach(function(key){
+        var val = data[key];
+        if (val === undefined || val === null || String(val).trim() === '') return;
+        if (key === 'menu') { state.menuText = val; renderToday(); return; }
+        if (state.texts[key]) return;
+        document.querySelectorAll('[data-text="' + key + '"]').forEach(function(el){
+          el.innerHTML = val;
+          originalTexts[key] = val;
+        });
+      });
+    })
+    .catch(function(){});
 })();
 
 checkAdmin();
