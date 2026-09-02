@@ -234,3 +234,7 @@ collections:
           - name: "faq4_a"
             label: "❓ 답변 4"
             widget: "text"
+          - name: "menu_text"
+            label: "🍚 오늘의 식단 (한 달치)"
+            widget: "text"
+            hint: "한 줄에 하루씩 적어 주세요. 날짜 | 오전 간식 | 점심 | 오후 간식 순서이고, 특별식단은 날짜 뒤에 [튼튼싹싹식단] 처럼 대괄호로 적으면 홈페이지에 딱지가 붙습니다."
