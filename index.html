@@ -1386,6 +1386,12 @@ async function exportHtml(){
             }).join('') + '</ul>');
       }
 
+      /* 오늘의 식단 (한 달치를 한 번에) */
+      if (d.menu_text && String(d.menu_text).trim()) {
+        state.menuText = d.menu_text;
+        renderToday();
+      }
+
       /* 자주 묻는 질문 */
       [1,2,3,4].forEach(function(n){
         if (has(d,'faq'+n+'_q')) put('faqq'+n, rich(d['faq'+n+'_q']));
